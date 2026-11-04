@@ -2,11 +2,9 @@
 
 **An anime Japanese-learning RPG.** Choose someone to spend time with, follow a small story, and learn to type the Japanese words you share. This is the browser / Node.js migration of Lantern Stories, including its character art, expressions, nine scene openings, and Lantern Garden word game.
 
-**技术栈：HTML、CSS、JavaScript、Node.js 原生 HTTP / Fetch。没有 npm 第三方依赖，也不需要仓颉、华为 SDK、SDL、Python 或编译器。** 图片、字体与游戏内容都已随仓库提供。
-
 ![Character selection](docs/home.jpg)
 
-## 一键启动 / Run
+## Run
 
 Download or clone this repository, extract it to a writable folder, then:
 
@@ -23,9 +21,9 @@ If Node.js 22+ is absent, the launcher downloads the official **Node.js 22.23.1*
 
 On macOS, if a ZIP download loses executable permissions, run `chmod +x run.sh run.command` once. If Gatekeeper prevents double-clicking, start `./run.sh` from Terminal. If your terminal cannot find `npm`, use `node server.mjs --open`; the game itself does not use npm.
 
-## API 配置 / Live AI
+## Live AI API
 
-**无需 API Key 也能评分运行：选择 `Offline demo`。** It includes all nine authored openings, three choices per round, Japanese action translation, expression changes, typing practice, journals, and three six-round endings. It is explicitly labelled; free-form translation requires live AI. The garden always works offline.
+**Choose `Offline demo` for no-api running** It includes all nine authored openings, three choices per round, Japanese action translation, expression changes, typing practice, journals, and three six-round endings. It is explicitly labelled; free-form translation requires live AI. The garden always works offline.
 
 For the full AI story and free replies, copy `.env.example` to **`.env`** in the repository root:
 
