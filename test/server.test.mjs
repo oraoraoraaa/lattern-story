@@ -1,0 +1,9 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {once} from 'node:events';import {createApp} from '../server.mjs';
+test('HTTP serves self-contained assets, hides secrets and rejects cross-site/malformed requests',async t=>{
+ const server=createApp({key:'SECRET_DO_NOT_LEAK',model:'test-model',baseURL:'https://api.deepseek.com'});server.listen(0,'127.0.0.1');await once(server,'listening');t.after(()=>{server.closeAllConnections();server.close();});const base=`http://127.0.0.1:${server.address().port}`;
+ const get=async route=>{const r=await fetch(base+route);return {status:r.status,text:await r.text()};};
+ assert.equal((await get('/')).status,200);assert.equal((await get('/lib/romaji.mjs')).status,200);assert.equal((await get('/assets/fonts/OFL.txt')).status,200);assert.equal((await get('/.env')).status,404);assert.equal((await get('/server.mjs')).status,404);assert.equal((await get('/%2eenv')).status,404);const config=await get('/api/config');assert.equal(config.status,200);assert.ok(!config.text.includes('SECRET'));assert.equal(JSON.parse(config.text).hasKey,true);
+ const post=(route,data,headers={})=>fetch(base+'/api/story/'+route,{method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify(data)});
+ assert.equal((await post('start',{}, {Origin:'https://evil.example'})).status,403);assert.equal((await post('start',{characterId:'unknown'})).status,400);assert.equal((await fetch(base+'/api/story/start',{method:'POST',body:'{}'})).status,415);
+ const start=await post('start',{characterId:'haruka',sceneId:0,language:'zh',mode:'demo'});assert.equal(start.status,200);let s=await start.json();assert.equal(s.line.translation,'要一起读书吗？');assert.equal((await post('send',{id:s.id,romaji:s.line.romaji})).status,409);s=await (await post('read',{id:s.id,romaji:s.line.romaji})).json();assert.equal(s.stage,'reply');assert.equal((await post('close',{id:s.id})).status,200);
+});

@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+ <meta name="theme-color" content="#151725"><meta name="description" content="A little Japanese, a little courage. An anime story RPG that teaches you to type what you say.">
+ <title>Lantern Stories · 灯りの物語</title><link rel="icon" href="/assets/icon.png"><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+ <div class="ambient" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+ <header class="topbar"><button class="brand" id="brand" aria-label="Lantern Stories home"><span class="brand-mark">灯</span><span>LANTERN <b>STORIES</b><small>灯りの物語</small></span></button><div class="top-actions"><span id="connection" class="connection">LOCAL EDITION</span><button class="quiet" id="journal-button" hidden>Journal <kbd>J</kbd></button><button class="quiet" id="home-button" hidden>Leave scene</button></div></header>
+ <main id="app"></main>
+ <div id="toast" role="status" aria-live="polite"></div>
+ <dialog id="journal"><div class="dialog-head"><div><span class="eyebrow">WORDS WE KEPT</span><h2>Your journal</h2></div><button id="close-journal" class="quiet">Close <kbd>Esc</kbd></button></div><div id="journal-entries"></div><p class="muted">This journal lives only in this session. Leaving the scene clears it.</p></dialog>
+ <script type="module" src="/app.mjs"></script>
+</body></html>

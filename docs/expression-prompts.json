@@ -1,0 +1,26 @@
+{
+  "tool": "built-in ImageGen",
+  "layout": "3 columns x 2 rows",
+  "expressions": [
+    "normal",
+    "loving",
+    "angry",
+    "shy",
+    "sad",
+    "character-specific"
+  ],
+  "prompts": [
+    {
+      "character": "yuri",
+      "prompt": "Use case: identity-preserve. Create ONE game-ready transparent expression sprite atlas based on the attached original yuri anime portrait. Output a square 1536x1536 PNG with a STRICT 3-column by 2-row grid, six equal 512x768 portrait cells, fully transparent background, no grid lines, no text. Repeat the SAME adult woman, identical hairstyle, outfit, glasses/accessories and props, identical waist-up pose, scale and head/shoulder placement in EVERY cell. Keep body still; change ONLY facial expression and slight face blush/eyebrows/mouth. Preserve original polished Japanese anime style and character identity; NOT realistic. Each entire character must fit inside her cell with transparent padding, no bleeding between cells; hair, hands and prop silhouettes fully contained, bottom cut at identical waist height. Read cells left-to-right, top-to-bottom: 1 normal (original calm friendly expression), 2 loving (soft affectionate eyes, tender smile), 3 angry (visibly upset brows and small frown, no violence), 4 shy (averted gaze, strong pink blush, timid smile), 5 sad (downcast eyes and trembling mouth, small tears), 6 delighted: joyful open laugh with eyes gently closed. Isolate character and her original held prop from the old environment. No scenery, no extra characters, no new props. The six matching poses will crossfade during dialogue."
+    },
+    {
+      "character": "haruka",
+      "prompt": "Use case: identity-preserve. Create ONE game-ready transparent expression sprite atlas based on the attached original haruka anime portrait. Output a square 1536x1536 PNG with a STRICT 3-column by 2-row grid, six equal 512x768 portrait cells, fully transparent background, no grid lines, no text. Repeat the SAME adult woman, identical hairstyle, outfit, glasses/accessories and props, identical waist-up pose, scale and head/shoulder placement in EVERY cell. Keep body still; change ONLY facial expression and slight face blush/eyebrows/mouth. Preserve original polished Japanese anime style and character identity; NOT realistic. Each entire character must fit inside her cell with transparent padding, no bleeding between cells; hair, hands and prop silhouettes fully contained, bottom cut at identical waist height. Read cells left-to-right, top-to-bottom: 1 normal (original calm friendly expression), 2 loving (soft affectionate eyes, tender smile), 3 angry (visibly upset brows and small frown, no violence), 4 shy (averted gaze, strong pink blush, timid smile), 5 sad (downcast eyes and trembling mouth, small tears), 6 thoughtful: quiet pensive gaze, slightly furrowed brow. Isolate character and her original held prop from the old environment. No scenery, no extra characters, no new props. The six matching poses will crossfade during dialogue."
+    },
+    {
+      "character": "hana",
+      "prompt": "Use case: identity-preserve. Create ONE game-ready transparent expression sprite atlas based on the attached original hana anime portrait. Output a square 1536x1536 PNG with a STRICT 3-column by 2-row grid, six equal 512x768 portrait cells, fully transparent background, no grid lines, no text. Repeat the SAME adult woman, identical hairstyle, outfit, glasses/accessories and props, identical waist-up pose, scale and head/shoulder placement in EVERY cell. Keep body still; change ONLY facial expression and slight face blush/eyebrows/mouth. Preserve original polished Japanese anime style and character identity; NOT realistic. Each entire character must fit inside her cell with transparent padding, no bleeding between cells; hair, hands and prop silhouettes fully contained, bottom cut at identical waist height. Read cells left-to-right, top-to-bottom: 1 normal (original calm friendly expression), 2 loving (soft affectionate eyes, tender smile), 3 angry (visibly upset brows and small frown, no violence), 4 shy (averted gaze, strong pink blush, timid smile), 5 sad (downcast eyes and trembling mouth, small tears), 6 smug: mischievous confident smirk and raised eyebrow. Isolate character and her original held prop from the old environment. No scenery, no extra characters, no new props. The six matching poses will crossfade during dialogue."
+    }
+  ]
+}
