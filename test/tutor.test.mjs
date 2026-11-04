@@ -1,0 +1,15 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {openDatabase} from '../lib/database.mjs';import {Accounts} from '../lib/accounts.mjs';import {Learning} from '../lib/learning.mjs';import {Tutor} from '../lib/tutor.mjs';
+test('example caching coalesces requests and uses the low-cost model; private chats stay bounded and out of SQLite',async t=>{
+ const db=openDatabase(':memory:');t.after(()=>db.close());const accounts=new Accounts(db);const {user}=await accounts.register('student','password123'),{user:other}=await accounts.register('other','password123');const learning=new Learning(db);const s=learning.plan(user,1);let calls=[];
+ const fetcher=async(url,options)=>{const body=JSON.parse(options.body);calls.push(body);return {ok:true,json:async()=>({choices:[{message:{content:JSON.stringify(body.max_tokens===550?{japanese:'今日はいい日です。',reading:'きょうはいいひです。',translation:'Today is a good day.',note:'日 is read ひ here.'}:{answer:'Use ひ for the standalone noun in this sentence.'})}}]})};};
+ const tutor=new Tutor(db,learning,{key:'SECRET',baseURL:'https://api.deepseek.com',model:'expensive-story-model',studyModel:'deepseek-flash'},{fetcher});
+ const [a,b]=await Promise.all([tutor.example(user,{entryId:s.current.entryId,reading:'ひ'}),tutor.example(user,{entryId:s.current.entryId,reading:'ひ'})]);assert.equal(calls.length,1);assert.equal(calls[0].model,'deepseek-flash');assert.equal(calls[0].max_tokens,550);assert.equal(a.example.japanese,b.example.japanese);await tutor.example(user,{entryId:s.current.entryId,reading:'ひ'});assert.equal(calls.length,1);
+ await assert.rejects(()=>tutor.chat(other,{threadId:a.threadId,question:'What does this mean?'}),/new conversation/);await assert.rejects(()=>tutor.example(other,{entryId:s.current.entryId,reading:'ひ'}),/studies first/);
+ for(let i=0;i<5;i++)await tutor.chat(user,{threadId:a.threadId,question:'When can I use this? '+i});assert.ok(calls.at(-1).messages.length<=6);assert.equal(calls.at(-1).max_tokens,600);assert.ok(!JSON.stringify(calls).includes(user.username));assert.equal(db.prepare('SELECT count(*) AS n FROM tutor_examples').get().n,1);assert.ok(!db.prepare('SELECT payload FROM tutor_examples').get().payload.includes('When can I use this?'));
+ tutor.forget(user.id);assert.equal(tutor.threads.size,0);
+});
+test('invalid examples are rejected rather than cached as dictionary facts',async t=>{
+ const db=openDatabase(':memory:');t.after(()=>db.close());const {user}=await new Accounts(db).register('learner','password123');const learning=new Learning(db);const s=learning.plan(user,1);
+ const tutor=new Tutor(db,learning,{key:'test',model:'test',baseURL:'https://api.deepseek.com'},{fetcher:async()=>({ok:true,json:async()=>({choices:[{message:{content:JSON.stringify({japanese:'こんにちは',reading:'こんにちは',translation:'Hello',note:'test'})}}]})})});await assert.rejects(()=>tutor.example(user,{entryId:s.current.entryId,reading:'ひ'}));assert.equal(db.prepare('SELECT count(*) AS n FROM tutor_examples').get().n,0);
+});

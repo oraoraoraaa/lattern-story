@@ -2,7 +2,7 @@
 set -eu
 cd "$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 if [ "$#" -eq 0 ]; then set -- --open; fi
-valid_node() { "$1" -e 'process.exit(Number(process.versions.node.split(".")[0])>=22?0:1)' >/dev/null 2>&1; }
+valid_node() { "$1" -e 'const [major,minor]=process.versions.node.split(".").map(Number);process.exit(major>22||major===22&&minor>=13?0:1)' >/dev/null 2>&1; }
 if command -v node >/dev/null 2>&1 && valid_node node; then exec node server.mjs "$@"; fi
 VERSION=22.23.1
 case "$(uname -s)" in Darwin) OS=darwin;; Linux) OS=linux;; *) echo 'Use run.bat on Windows.' >&2; exit 1;; esac

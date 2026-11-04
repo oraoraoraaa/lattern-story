@@ -1,3 +1,7 @@
+import {openDatabase} from './lib/database.mjs';
+import {Accounts,cookieToken,sessionCookie} from './lib/accounts.mjs';
+import {Learning} from './lib/learning.mjs';
+import {Tutor} from './lib/tutor.mjs';
 import {createServer} from 'node:http';
 import {readFile,stat} from 'node:fs/promises';
 import {fileURLToPath,pathToFileURL} from 'node:url';
@@ -15,16 +19,18 @@ export async function loadConfig(){
  const get=(key,fallback)=>process.env[key]??values[key]??fallback;
  const baseURL=get('DEEPSEEK_BASE_URL','https://api.deepseek.com').replace(/\/+$/,'');
  const url=new URL(baseURL);if(url.protocol!=='https:'&&!(url.protocol==='http:'&&['localhost','127.0.0.1','[::1]'].includes(url.hostname)))throw new Error('Use HTTPS for remote AI services.');
- return {key:get('DEEPSEEK_API_KEY',''),baseURL,model:get('DEEPSEEK_MODEL','deepseek-flash'),port:Number(get('PORT','8787'))};
+ return {key:get('DEEPSEEK_API_KEY',''),baseURL,model:get('DEEPSEEK_MODEL','deepseek-flash'),studyModel:get('DEEPSEEK_STUDY_MODEL','deepseek-flash'),databasePath:path.join(get('LANTERN_DATA_DIR',path.join(ROOT,'data')),'lantern.sqlite'),port:Number(get('PORT','8787'))};
 }
-const TYPES={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.png':'image/png','.svg':'image/svg+xml','.otf':'font/otf','.txt':'text/plain; charset=utf-8'};
+const TYPES={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.png':'image/png','.svg':'image/svg+xml','.otf':'font/otf','.txt':'text/plain; charset=utf-8','.json':'application/json; charset=utf-8'};
 async function bodyJSON(req){
  if(!req.headers['content-type']?.startsWith('application/json'))throw new GameError('Expected JSON.',415);
  let bytes=0;const parts=[];
  for await(const part of req){bytes+=part.length;if(bytes>12000)throw new GameError('Request too large.',413);parts.push(part);}
  try{const value=JSON.parse(Buffer.concat(parts).toString('utf8'));if(!value||Array.isArray(value)||typeof value!=='object')throw new Error();return value;}catch{throw new GameError('Invalid JSON.');}
 }
-export function createApp(config,{provider,sessions}={}){
+export function createApp(config,{provider,sessions,database,tutorFetcher}={}){
+ const db=database??openDatabase(config.databasePath??':memory:');
+ const accounts=new Accounts(db),learning=new Learning(db),tutor=new Tutor(db,learning,config,{fetcher:tutorFetcher??fetch});
  const store=sessions??new Sessions(provider??createProvider(config),demoProvider);
  const server=createServer(async(req,res)=>{
   const json=(status,value)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(value));};
@@ -37,10 +43,31 @@ export function createApp(config,{provider,sessions}={}){
    const origin=req.headers.origin;
    if(origin&&!hosts.some(host=>origin===`http://${host}`))throw new GameError('Cross-site requests are not allowed.',403);
    const url=new URL(req.url,`http://${req.headers.host}`);
-   if(url.pathname==='/api/config'&&req.method==='GET')return json(200,{hasKey:!!config.key,model:config.model});
+   const token=cookieToken(req.headers.cookie);
+   if(url.pathname==='/api/config'&&req.method==='GET')return json(200,{hasKey:!!config.key});
+   if(url.pathname==='/api/account'&&req.method==='GET')return json(200,{user:accounts.authenticate(token)});
+   if(url.pathname==='/api/learn/summary'&&req.method==='GET')return json(200,learning.summary(accounts.require(token)));
    if(url.pathname.startsWith('/api/')){
     if(req.method!=='POST')throw new GameError('Use POST.',405);
     const data=await bodyJSON(req);
+    if(['/api/account/register','/api/account/login'].includes(url.pathname)){
+     const result=await accounts[url.pathname.split('/').pop()](data.username,data.password,'local');
+     if(token)accounts.logout(token);res.setHeader('Set-Cookie',sessionCookie(result.token));return json(200,{user:result.user});
+    }
+    if(url.pathname==='/api/account/logout'){
+     const user=accounts.authenticate(token);accounts.logout(token);if(user)tutor.forget(user.id);res.setHeader('Set-Cookie',sessionCookie('',0));return json(200,{signedOut:true});
+    }
+    if(url.pathname.startsWith('/api/learn/')){
+     const user=accounts.require(token),action=url.pathname.split('/').pop();
+     if(action==='plan')return json(200,{session:learning.plan(user,data.goal)});
+     if(action==='resume'){const session=learning.load(user.id);return json(200,{session:session?learning.snapshot(session):null});}
+     return json(200,learning.act(user,action,data));
+    }
+    if(url.pathname.startsWith('/api/tutor/')){
+     const user=accounts.require(token),action=url.pathname.split('/').pop();
+     if(!['example','chat'].includes(action))throw new GameError('Not found.',404);
+     return json(200,await tutor[action](user,data));
+    }
     const result=url.pathname==='/api/story/start'?await store.start(data):url.pathname.startsWith('/api/story/')?await store.action(data.id,url.pathname.split('/').pop(),data):null;
     if(!result)throw new GameError('Not found.',404);return json(200,result);
    }
@@ -52,11 +79,12 @@ export function createApp(config,{provider,sessions}={}){
    let info;try{info=await stat(filename);}catch{throw new GameError('Not found.',404);}if(!info.isFile())throw new GameError('Not found.',404);
    res.writeHead(200,{'Content-Type':TYPES[path.extname(filename)]??'application/octet-stream','Content-Length':info.size,'Cache-Control':'no-cache'});res.end(req.method==='HEAD'?undefined:await readFile(filename));
   }catch(error){
-   const message=error instanceof GameError?error.message:String(error.message??'AI request failed.').replaceAll(config.key||'\u0000','[redacted]');
+   if(!(error instanceof GameError))console.error('[Lantern]',String(error.message??'Request failed.').replaceAll(config.key||'\u0000','[redacted]'));
+   const message=error instanceof GameError?error.message:req.url?.startsWith('/api/tutor/')?'The tutor could not find the words. Please try again.':'The storyteller could not find the words. Please try again.';
    json(error.status??502,{error:message});
   }
  });
- server.on('close',()=>{for(const s of store.items.values())s.controller?.abort();store.items.clear();});
+ server.on('close',()=>{for(const s of store.items.values())s.controller?.abort();store.items.clear();if(!database)db.close();});
  return server;
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(path.resolve(process.argv[1])).href){

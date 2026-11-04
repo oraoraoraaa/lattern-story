@@ -1,0 +1,11 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {sceneWordCount,validateScene} from '../public/lib/scene.mjs';import {Sessions} from '../lib/sessions.mjs';import {demoProvider} from '../lib/demo.mjs';import {makeLine} from '../public/lib/romaji.mjs';import {narrativePrompt} from '../lib/provider.mjs';
+test('custom scenes count multilingual words and enforce both limits on the server',()=>{
+ assert.equal(sceneWordCount('A quiet rainy bookshop.'),4);assert.ok(sceneWordCount('一緒に図書館で本を読む。')>1);assert.equal(validateScene('  Reading together.  '),'Reading together.');assert.throws(()=>validateScene('word '.repeat(81)),/80 words/);assert.throws(()=>validateScene('a'.repeat(501)),/500 characters/);assert.throws(()=>validateScene('  '));
+});
+test('custom setting reaches the short prompt and stays attached to every story turn',async()=>{
+ const contexts=[];const provider={async narrative(s){contexts.push(narrativePrompt(s));return {...makeLine({japanese:'一緒に。',translation:'Together.',chunks:[{japanese:'一緒',reading:'いっしょ'},{japanese:'に',reading:'に'},{japanese:'。',reading:''}]}),emotion:'shy',memory:'A rainy bookshop.',ending:'none',choices:[{text:'Stay',path:'good'},{text:'Listen',path:'hidden'},{text:'Leave',path:'bad'}]};},async translate(){return makeLine({japanese:'はい。',translation:'Yes.',chunks:[{japanese:'はい',reading:'はい'},{japanese:'。',reading:''}]});}};
+ const store=new Sessions(provider,demoProvider);let s=await store.start({characterId:'haruka',sceneDescription:'A rainy bookshop. We find a letter in an old novel.',language:'en'});assert.equal(s.scene.custom,true);assert.equal(s.sceneId,'custom');assert.equal(s.scene.background,'library');assert.ok(contexts[0].includes('find a letter'));assert.ok(contexts[0].length<1800);
+ s=await store.action(s.id,'read',{romaji:'issyoni'});s=await store.action(s.id,'draft',{text:'Stay'});s=await store.action(s.id,'send',{romaji:'hai'});assert.ok(contexts[1].includes('find a letter'));assert.equal(s.scene.custom,true);
+ await assert.rejects(()=>store.start({characterId:'haruka',sceneDescription:'My scene',mode:'demo'}),/storyteller/);await assert.rejects(()=>store.start({characterId:'haruka',sceneDescription:'word '.repeat(81)}),/80 words/);
+});

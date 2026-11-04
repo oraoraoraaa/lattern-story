@@ -6,3 +6,8 @@ node_modules/
 .DS_Store
 *.log
 coverage/
+# Local accounts, password hashes, sessions, and learning records
+/data/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm

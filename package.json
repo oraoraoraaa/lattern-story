@@ -1,9 +1,16 @@
 {
   "name": "lattern-story",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "private": true,
   "type": "module",
-  "description": "Lantern Stories — a Japanese typing RPG, powered by browser standards and Node.js",
-  "engines": { "node": ">=22" },
-  "scripts": { "start": "node server.mjs --open", "test": "node --test", "check": "node --check server.mjs && node --check public/app.mjs" }
+  "description": "Lantern Stories \u2014 a Japanese typing RPG, powered by browser standards and Node.js",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "start": "node server.mjs --open",
+    "test": "node --test",
+    "check": "node scripts/check.mjs",
+    "dictionary:update": "python3 scripts/update-dictionary.py"
+  }
 }

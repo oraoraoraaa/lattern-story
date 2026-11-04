@@ -1,110 +1,144 @@
 # Lantern Stories · 灯りの物語
 
-**An anime Japanese-learning RPG.** Choose someone to spend time with, follow a small story, and learn to type the Japanese words you share. This is the browser / Node.js migration of Lantern Stories, including its character art, expressions, nine scene openings, and Lantern Garden word game.
+A Japanese-learning RPG and a personal kanji garden. Choose **Yuri**, **Haruka** or **Hana**, share a predefined or custom scene, and practice the Japanese words you exchange. In the garden, recall kanji readings, choose dictionary meanings, and build a lasting learning record.
 
-![Character selection](docs/home.jpg)
+**HTML / CSS / JavaScript + Node.js and SQLite. No npm dependencies, native SDKs, Cangjie, Huawei tools, SDL or build step.** Art, fonts, input mappings and a 1,200-word dictionary deck are included.
+
+Current version 3 screenshots, captured from the running application on **2026-11-05**. The account shown is a temporary demonstration account.
+
+![Character selection and current home screen](docs/home.jpg)
 
 ## Run
-
-Download or clone this repository, extract it to a writable folder, then:
 
 | Platform | Start |
 | --- | --- |
 | **Windows x86_64** | Double-click **`run.bat`** |
-| macOS | Double-click **`run.command`**, or run `./run.sh` in Terminal |
+| macOS | Double-click **`run.command`**, or run `./run.sh` |
 | Linux | Run `./run.sh` |
-| Node.js 22+ already installed | `npm start` (or `node server.mjs --open`) |
+| Node.js **22.13+** installed | `npm start`, or `node server.mjs --open` |
 
-The launcher opens **http://127.0.0.1:8787** in your browser. Keep the terminal open; press **Ctrl+C** there to stop. Use a current Edge, Chrome, Firefox, or Safari. No `npm install` and no build step are needed.
+Open **http://127.0.0.1:8787** in a current Edge, Chrome, Firefox or Safari. Keep the terminal open; Ctrl+C stops the server. Use the same address consistently (`127.0.0.1` or `localhost`) so the browser keeps the account cookie for that host.
 
-If Node.js 22+ is absent, the launcher downloads the official **Node.js 22.23.1** portable runtime, verifies its SHA-256 against the official checksum list, and extracts it under ignored `.tools/`. The first launch needs internet access to `nodejs.org`; later launches reuse that runtime. Windows uses built-in PowerShell 5.1; macOS/Linux use `curl`, `tar`, and `shasum` or `sha256sum`. On a computer without internet, install Node.js 22+ in advance, or copy the matching official portable runtime into the `.tools/node-v22.23.1-PLATFORM-ARCH/` folder. The Windows directory is `.tools/node-v22.23.1-win-x64/` and must contain `node.exe`.
+The launchers reuse a compatible Node installation or download official **Node.js 22.23.1**, verify its SHA-256 against the official checksum list, and extract it into ignored `.tools/`. The first automatic download needs access to `nodejs.org`. Afterward the quiz and sample chapters work offline. No `npm install` is needed. Windows uses built-in PowerShell; macOS/Linux use curl, tar and shasum/sha256sum. If downloads are blocked, install Node.js 22.13+ yourself. On macOS, a ZIP download may need `chmod +x run.sh run.command` once before launching from Terminal.
 
-On macOS, if a ZIP download loses executable permissions, run `chmod +x run.sh run.command` once. If Gatekeeper prevents double-clicking, start `./run.sh` from Terminal. If your terminal cannot find `npm`, use `node server.mjs --open`; the game itself does not use npm.
+To try the game without an API key, choose **Sample chapter**. Create a local account for the kanji quiz and saved progress. Configure the key below to enable **Your story**, custom scenes, examples and tutor chat.
 
 ## Live AI API
 
-**Choose `Offline demo` for no-api running** It includes all nine authored openings, three choices per round, Japanese action translation, expression changes, typing practice, journals, and three six-round endings. It is explicitly labelled; free-form translation requires live AI. The garden always works offline.
-
-For the full AI story and free replies, copy `.env.example` to **`.env`** in the repository root:
+Copy `.env.example` to `.env`:
 
 ```dotenv
 DEEPSEEK_API_KEY=your_key_here
 DEEPSEEK_BASE_URL=https://api.deepseek.com
 DEEPSEEK_MODEL=deepseek-flash
+DEEPSEEK_STUDY_MODEL=deepseek-flash
 PORT=8787
 ```
 
-Restart the server, select **Live story**, and choose your translation language: **English / 中文 / Español**. Environment variables override `.env`. The configured model must support OpenAI-compatible chat completions and JSON output. You can change the model or base URL without changing the game; the server appends `/chat/completions` to the base URL.
+Restart the server after changing configuration. The base URL receives `/chat/completions`; other OpenAI-compatible JSON-output models can be configured. `DEEPSEEK_STUDY_MODEL` selects the vocabulary tutor independently from the RPG model. Its default, **DeepSeek Flash**, is the cheaper tier in [DeepSeek’s model table](https://api-docs.deepseek.com/quick_start/pricing/). Examples use at most 550 output tokens, follow-up replies at most 600, and passed words request examples only on demand. Example requests are cached/coalesced across accounts for the same word/reading/language/model. Chat context keeps only the last two exchanges and the word/example; it is never written to SQLite.
 
-The API key stays on the local server and `.env` is ignored by Git. Only story context and the replies you submit are sent to the configured provider. No transcript or player message is saved to disk. Reloading, leaving the scene, or restarting clears your current story; idle server sessions expire after two hours. The server listens on `127.0.0.1` only.
+The key is read only by the server and ignored by Git. Accounts, passwords and learning records are never sent to the model. Custom scenes, story replies and tutor questions are sent only when using those AI features. A failed AI request never silently substitutes a made-up dictionary definition or a sample story.
 
-## How to play
+## RPG and custom scenes
 
-1. Choose **Yuri** (warm and caring), **Haruka** (shy and bookish), or **Hana** (devoted and playful). Each has three scenes. Characters and openings are predefined; there is no custom character-prompt field. All characters are adults.
-2. Read the Japanese line and the small translation. Type its romaji in the bottom-right panel. Each matching Japanese chunk turns **green** in both panels. Backspace undoes progress; incorrect letters do not advance it. Paste and drag-and-drop are blocked in practice fields.
-3. Press **Enter / Continue** to unlock the three recommendations. They suggest supportive, unexpected, and distancing directions; the labels do not reveal the outcome. In Live story, write your own reply in any language instead. IME and paste work in the free-reply field; limit 160 characters.
-4. The AI translates your words or parenthesized action into Japanese first. Practice that romaji, then press **Enter / Send reply**. Only then does the character answer. You can edit a translated draft before sending; editing requires a fresh translation and practice.
-5. The character’s emotion changes the portrait with a **420 ms crossfade**. Every character has normal / loving / angry / shy / sad plus delighted (Yuri), thoughtful (Haruka), or smug (Hana).
-6. After six player replies, the AI closes the scene with a Good, Hidden, or Bad ending based on the actual conversation. Practice the final line to see the ending card. Open **Journal** to reread the conversation.
+Each of the three adult anime characters has three authored openings and six expressions. Dialogue sits at the bottom, practice at the right, and three recommended replies in the center. Correctly typed Japanese chunks turn green; Backspace undoes progress. You can use recommendations or write a reply, which is translated to Japanese and practiced before sending. Actions such as a hug are translated literally too.
 
-![Japanese and romaji alignment with progressive green highlighting](docs/typing.jpg)
+After choosing a character, use **“Or imagine your own moment”** to describe a scene. Limit: **80 words and 500 Unicode characters**, checked in both the UI and server. Word counting uses `Intl.Segmenter`, including Japanese and Chinese text. Custom scenes use **Your story** mode. The character and expression list stay fixed, while the setting remains pinned in the prompt throughout the conversation. A suitable existing backdrop is reused; new images are not generated.
 
-![A player action translated to Japanese before it is sent](docs/player-reply.jpg)
+After six replies, the character closes the scene according to the actual conversation. Practice the last line to reveal its ending. Expression transitions crossfade over 420 ms. The in-session journal is cleared when leaving the scene; RPG transcripts are not saved as account data.
 
-**Keys:** Enter advances a completed practice line; Tab toggles hints while the practice field is focused; 1–3 selects recommendations when outside an editing field; Ctrl/Cmd+Enter translates a free reply; J opens the journal when outside a text field; Esc closes the journal or leaves the story. On narrow screens the panels stack vertically, keeping the practice field usable.
+![Custom scene editor](docs/custom-scene.jpg)
 
-## Romaji rules
+![Current RPG with alternate romaji input and green Japanese highlighting](docs/typing.jpg)
 
-The model returns Japanese surfaces with **kana readings**, never authoritative romaji. The application checks that the surfaces concatenate exactly to the Japanese sentence, then computes the romaji locally using one shared converter on server and browser.
+Keyboard controls: Enter advances completed practice; Tab toggles hints while focused in practice; 1–3 selects story recommendations outside editing fields; Ctrl/Cmd+Enter translates a free reply; J opens the journal outside a field; Esc closes a dialog or leaves the screen. Paste is allowed in ordinary replies and custom scenes, and blocked in practice/quiz reading fields. Native IME entry works in ordinary text and the reading quiz.
 
-- Learning units are lexical words or verb stems, particles, polite auxiliaries, and punctuation. The AI supplies lexical boundaries. The application separates recognizable attached grammatical endings on kanji-containing chunks. Kana-only lexical words such as **この** and **もっと** stay together; **ません** stays together.
-- Example: **一緒 / に / 読み / ません / か / 。** → **issho / ni / yomi / masen / ka**. Type `isshoniyomimasenka`; spaces, case, and punctuation are ignored.
-- Use `shi`, `chi`, `tsu`, `fu`, `ji`, `sha`, `cha`, etc. Isolated particles は / へ / を use **wa / e / o**. Greetings こんにちは / こんばんは use **konnichiwa / konbanwa**.
-- Small っ doubles the following consonant, including across adjacent learning chunks: 待っ / て → **mat / te**. A punctuation boundary stops that bridge. Long ー repeats the previous vowel: コーヒー → **koohii**. Kana おう remains **ou**. ん is **n**; apostrophes are optional separators.
-- A Japanese unit turns green only when its complete corresponding romaji has been typed. Punctuation has no keystrokes.
+## All supported romaji alternatives
 
-This is a learning-oriented chunking convention, **not a full morphological analyzer**. Kanji pronunciation depends on the AI’s kana reading; alignment, kana conversion, punctuation, grammatical suffix handling, and progress boundaries are validated locally. An invalid AI response produces a retryable error instead of entering the story.
+The RPG and quiz now share one matcher. For example, **しょ** accepts **`sho` / `syo`**, **私** accepts **`watashi` / `watasi`**, and **一緒** accepts **`issho` / `issyo`**. Alternatives may be mixed within one sentence without breaking Japanese highlighting. The complete supported table and contextual rules are in **[docs/romaji.md](docs/romaji.md)** and the in-game **Typing guide**.
 
-## The Lantern Garden
+Coverage includes Hepburn, Kunrei/Nihon-shiki, kana-only mappings from Google Mozc’s default IME table, nasal `n/nn/n'/xn`, consonant doubling, `x/l` small-kana sequences, foreign-sound digraphs, particle pronunciation/input forms, and long-vowel `-`. Written おう remains `ou`; macron spellings are not enabled. This is target-reading practice, not an IME candidate-conversion emulator.
 
-A separate offline mode carries over **48 words** in Nature, Everyday, and Greetings. Each round samples 12 distinct words. Quiet practice has no time limit; Challenge lasts 90 seconds. Light a lantern for each word, build a streak, and review what you learned. Accuracy and keystrokes per minute are measured locally. Alternate spellings such as `shi/si`, `chi/ti`, and `fu/hu` are accepted where listed. For an ambiguous completed spelling such as `hon` / `honn`, press Enter after `hon`, or finish typing `honn`. Pause freezes the clock; Esc pauses/resumes a round.
+Kana-only readings are derived locally. In RPG dialogue the AI supplies kanji readings and lexical chunk boundaries, which are checked for surface alignment; this is not a complete morphological analyzer. Quiz readings come directly from JMdict. Matching uses a memoized graph instead of enumerating every possible sentence spelling.
 
-![Offline garden practice](docs/garden.jpg)
+## The Lantern Garden: kanji quiz
 
-## Development and validation
+1. **Create an account or sign in** with a username and password. No email or profile is requested.
+2. Set a goal of **1–100 new words**, default **30**. The session mixes those new entries with the oldest due reviews. Up to 60 due reviews fit in one session; the rest remain due. If nothing is due, up to five familiar, unmastered words return as a warm-up.
+3. Look at the **kanji**, then enter a valid dictionary reading in **kana or romaji**. If a spelling has multiple readings, any reading licensed by that written dictionary headword is accepted.
+4. Choose one of **four English dictionary meanings**, selected for the reading you gave. Keys 1–4 select a meaning when you are outside a text field. A hint turns the card and marks it for an earlier review. Incorrect choices can be retried, but the mistake is retained for scheduling.
+5. The result shows the dictionary meanings and readings. An **AI tutor example** appears when available; ask questions about pronunciation, usage or grammar in the follow-up chat. The home translation setting controls tutor translations/replies. Questions have a **400-character** limit.
+6. Choose **“I know this word · Pass”** to mark it mastered immediately. It will not return. Learning records show word status, readings, outcomes and upcoming review dates. An unfinished session can be resumed after closing the browser or restarting the server.
+
+The deck contains **1,200 kanji-containing words from JMdict / EDRDG**. Reading restrictions and sense restrictions are retained; entries with identical writing are merged. Authoritative dictionary definitions form the answer keys and distractors. Generated sentences/explanations are labelled supplementary AI material and do not alter the answer keys. This is a common-word starter deck with beginner ordering, not a certified JLPT list.
+
+![Kanji meaning quiz after entering its reading](docs/kanji-meaning.jpg)
+
+<details>
+<summary>More current screenshots: accounts, goals, records, tutor and mobile</summary>
+
+![Create a local learning account](docs/account.jpg)
+
+![Set a vocabulary goal and resume saved learning](docs/garden.jpg)
+
+![Recall the reading of a kanji headword](docs/kanji-reading.jpg)
+
+![Saved learning records and review dates](docs/learning-record.jpg)
+
+![AI example sentence and follow-up vocabulary chat](docs/word-tutor.jpg)
+
+![Kanji quiz on a phone-sized screen](docs/mobile.jpg)
+
+</details>
+
+All image files and capture details are listed in [the screenshot index](docs/screenshots.md).
+
+### Review schedule and mastery
+
+The schedule is an adaptive spaced-repetition heuristic, not a personalized measurement of someone’s forgetting curve:
+
+- A correct, unassisted first encounter schedules a review after **1 day**.
+- Further correct due reviews grow the interval through **3, 7, 14 and 30 days**.
+- **Six successful scheduled encounters on separate days** mark a word mastered and retire it.
+- A mistake or hint resets the level and schedules a retry in **10 minutes**.
+- Early/same-day warm-ups count in the study log but neither accelerate mastery nor postpone the due review.
+- A manual **Pass** retires a word immediately, regardless of its current level.
+
+Goals count new entries, so “30 new words” can produce more than 30 questions when reviews are included. Mastered entries are excluded from both new and review queues.
+
+## Local accounts and minimal storage
+
+SQLite is provided by Node’s built-in `node:sqlite`. The default database is **`data/lantern.sqlite`**. Override the directory with `LANTERN_DATA_DIR` if desired. The whole root `data/` directory is ignored by Git and never served over HTTP.
+
+Stored data: username, a unique salted **scrypt password hash**, goal, hashed expiring login tokens, per-word review counters/dates/mastery state, compact study-result events, one resumable study queue per account, and shared generated example sentences. No plaintext passwords, emails, IP addresses, browser fingerprints, raw keystrokes or tutor chat transcripts are stored. On Unix, the data directory is private and the database is mode 0600. Cookies are HttpOnly, SameSite=Strict, expire after seven days, and are revoked on sign-out. Account endpoints limit sign-in attempts.
+
+Accounts are local to this running installation; this is not a hosted login service or a sync account. The server continues to bind only to `127.0.0.1`. To back up progress, stop the server and copy `data/`; to transfer it, restore that directory before starting the same project on the other computer. No email-based password recovery is provided, so keep your password.
+
+## Dictionary attribution and updates
+
+JMdict is copyright James William BREEN and the **Electronic Dictionary Research and Development Group**. The derived deck is **CC BY-SA 4.0**. Source, transformation notes, original entry IDs, retrieval date and archive SHA-256 are included in the bundled data. Dictionary screens display attribution. See [source/licence notes](public/data/readme.md), [EDRDG’s licence statement](https://www.edrdg.org/edrdg/licence.html), the local [licence statement](public/data/EDRDG-LICENCE.html), and [CC BY-SA 4.0](public/data/CC-BY-SA-4.0.txt).
+
+Maintainers should refresh the bundled snapshot **at least monthly** with:
+
+```sh
+npm run dictionary:update
+npm test
+```
+
+The refresh command needs **Python 3 standard library only**; this is maintenance tooling and is not needed to launch or study. On Windows where Python is installed as `python`, run `python scripts/update-dictionary.py`. Review the resulting deck changes before distribution. Refreshing meanings/readings keeps stable headword IDs where possible and never wipes the local progress database.
+
+The romaji table incorporates kana mappings from [Google Mozc](https://github.com/google/mozc/blob/master/src/data/preedit/romanji-hiragana.tsv), with [upstream licence](public/data/Mozc-LICENSE.txt) included. Noto Sans CJK JP is bundled under the [SIL Open Font License](public/assets/fonts/OFL.txt). Existing ImageGen character artwork and generation prompts remain in `public/assets/` and `docs/`.
+
+## Development and verification
 
 ```sh
 npm test
 npm run check
-# If npm is not available:
-node --test
-node --check server.mjs
-node --check public/app.mjs
-# Start without opening a browser:
-node server.mjs
-# Test the portable macOS/Linux launcher without opening a browser:
-./run.sh --no-open
+node server.mjs                   # no automatic browser open
+./run.sh --no-open                # macOS/Linux launcher without browser open
+node scripts/romaji-reference.mjs # regenerate the full spelling reference
 ```
 
-The Node test suite covers all 9 × 3 scene/language combinations, all three endings, practice gates, literal actions, retry transactions, stale requests, emotion and choice validation, bounded memory, romaji boundaries, garden scoring, and HTTP configuration/secret protection. An optional [GitHub Actions template](docs/ci.github-actions.yml) runs the suite on Windows, macOS, and Linux with Node.js 22. Copy it to `.github/workflows/test.yml` to enable it using a GitHub credential with workflow permission. See [validation notes](docs/validation.md) for the verification performed for this migration.
+Tests use Node’s native runner, temporary/in-memory databases and mocked AI replies. They cover every listed spelling and prefix, all bundled dictionary readings, chunk highlighting, custom-scene limits/context, hashed accounts, cookies, database restart persistence, account isolation, quiz gates, review scheduling/mastery, pass exclusion, cached examples, bounded tutor context, and existing RPG flows. See [validation notes](docs/validation.md). The optional [CI template](docs/ci.github-actions.yml) is inactive until installed with a GitHub credential that can write workflows.
 
-Project layout:
-
-| Path | Purpose |
-| --- | --- |
-| `server.mjs` | Local HTTP server, `.env`, static files and API routes |
-| `lib/sessions.mjs` | Authoritative story state; transactional translation/reply steps |
-| `lib/provider.mjs` | Short DeepSeek prompts and structured-response validation |
-| `lib/memory.mjs` | Compact summary, pinned opening, recent turns and related older turns |
-| `lib/demo.mjs` | Explicit authored offline demo |
-| `public/` | Buildless browser UI, learning logic, art and fonts |
-| `test/` | Node native tests, with no network or API key requirement |
-| `run.bat`, `run.sh`, `run.command` | Cross-platform launchers |
-
-The main story prompt is roughly **1,100 characters**. Context is managed by the app: a maximum 360-character factual recap, the opening line, the latest six messages, and up to two related older messages. Older messages are retrieved by shared Han/katakana bigrams. The application validates the emotion enum, exactly one recommendation for each direction, the ending phase, chunk alignment, and length limits. A small translation repair request handles Japanese recommendation labels when the selected translation language differs. A round is committed only when the entire validated response succeeds, so retries preserve practice without duplicating player turns.
-
-**Troubleshooting:** If port 8787 is busy, stop the previous terminal or change `PORT`. AI errors show a retry button; check the key, model, balance, network and base URL. Live errors never silently switch to the authored demo. If Node cannot be downloaded, install Node.js 22+ manually and rerun. The default UI needs no CDN, remote font, native library, or package installation.
-
-## Assets and attribution
-
-Character posters and six-expression atlases are reused from the original Lantern Stories project, generated with ImageGen in Japanese anime style. Exact generation prompts are preserved in `docs/poster-prompts.json`, `docs/poster-prompts.md`, and `docs/expression-prompts.json`. Backgrounds and the shrine/fox garden are drawn locally with CSS/SVG; the atlas crops are rendered with browser canvas. **Noto Sans CJK JP** is bundled under the SIL Open Font License, in `public/assets/fonts/OFL.txt`. Node.js is obtained from its official distribution only when needed; its downloaded runtime includes its own license. No proprietary framework or native SDK binaries are included in this repository.
+If startup cannot find a suitable Node runtime, use the launcher or install Node.js 22.13+. If port 8787 is busy, stop the old server or change `PORT`. Developer setup and provider diagnostics are kept in this README/the terminal; the game presents player-facing messages.

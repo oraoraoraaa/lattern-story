@@ -3,7 +3,7 @@ setlocal
 cd /d "%~dp0"
 where node >nul 2>nul
 if errorlevel 1 goto portable
-node -e "process.exit(Number(process.versions.node.split('.')[0])>=22?0:1)" >nul 2>nul
+node -e "const v=process.versions.node.split('.').map(Number);process.exit(v[0]>22||v[0]===22&&v[1]>=13?0:1)" >nul 2>nul
 if errorlevel 1 goto portable
 node server.mjs --open
 goto done
